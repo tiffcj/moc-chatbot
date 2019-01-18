@@ -6,6 +6,8 @@ const languageCode = 'en-US';
 
 const dialogflow = require('dialogflow');
 
+const service = require('./reminders-service');
+
 const config = {
     credentials: {
         private_key: process.env.DIALOGFLOW_PRIVATE_KEY,
@@ -20,7 +22,7 @@ const sessionPath = sessionClient.sessionPath(projectId, sessionId);
 const { FACEBOOK_ACCESS_TOKEN } = process.env;
 
 const sendTextMessage = (userId, text) => {
-    console.log(text);
+    // console.log(text);
     return fetch(
         `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
         {
@@ -39,7 +41,18 @@ const sendTextMessage = (userId, text) => {
             }),
         }
     );
-}
+};
+
+const processIntent = (name, userId, parameters) => {
+    const action = parameters.fields.action.stringValue;
+    const datetime = parameters.fields.datetime.stringValue || parameters.fields.datetime.structValue.fields.date_time.stringValue;
+    if (name === 'add-reminder') {
+        console.log(parameters.toString());
+        service.addReminder(userId, action, datetime);
+    } else if (name === 'delete-reminder') {
+        service.deleteReminder(userId, action, datetime);
+    }
+};
 
 module.exports = (event) => {
     const userId = event.sender.id;
@@ -58,10 +71,19 @@ module.exports = (event) => {
     sessionClient
         .detectIntent(request)
         .then(responses => {
+            // console.log(responses);
+            // console.log("-----");
             const result = responses[0].queryResult;
-            return sendTextMessage(userId, result.fulfillmentText);
+            // console.log(result);
+
+            if (result.allRequiredParamsPresent) {
+                processIntent(result.intent.displayName, userId, result.parameters);
+                return sendTextMessage(userId, result.fulfillmentText);
+            }
+
+            return sendTextMessage(userId, "Please try that again.");
         })
         .catch(err => {
             console.error('ERROR:', err);
         });
-}
+};
