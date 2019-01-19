@@ -8,65 +8,40 @@ const con = mysql.createConnection({
     database: "default"
 });
 
-// con.connect(function(err) {
-//     if (err) throw err;
-//     console.log("Connected!");
-//     sql="";
-//     con.query(sql, function (err, result) {
-//         if (err) throw err;
-//         console.log("Result: " + result);
-//     });
-// });
-
 const executeQuery = (query, callback) => {
-    // con.connect(function(err) {
-    //     if (err) throw err;
-    //     console.log("Connected!");
-    //     con.query(query, function (err, result) {
-    //         if (err) throw err;
-    //         console.log("Result: " + result);
-    //         // con.end();
-    //     });
-    // });
-
-    // if (!con) {
-    //     con.connect(function(err) {
-    //         if (err) throw err;
-    //         console.log("Connected!");
-    //     });
-    // } else {
-        con.query(query, function (err, result) {
-            if (err) throw err;
-            console.log("Result: " + JSON.stringify(result));
-            if (callback) {
-                callback(result);
-            }
-        });
-    // }
+    con.query(query, function (err, result) {
+        if (err) {
+            throw err;
+        }
+        console.log("Query result: " + JSON.stringify(result));
+        if (callback) {
+            callback(result);
+        }
+    });
 };
 
-module.exports.addReminder = (userId, action, datetime) => {
+module.exports.addReminder = (userId, action, datetime, callback) => {
     const query = util.format("INSERT INTO reminders (userId, action, datetime, snoozedCount, deleted) " +
         "VALUES ('%s', '%s', '%s', 0, FALSE);", userId, action, (new Date(datetime)).toISOString());
-    return executeQuery(query);
+    console.log("QUERY: " + query);
+    executeQuery(query, callback);
 };
 
-module.exports.deleteReminder = (userId, action, datetime) => {
+module.exports.deleteReminder = (userId, action, datetime, callback) => {
     let date = datetime;
-    if (datetime !== '') {
+    if (date !== '') {
         date = new Date(datetime).toISOString();
     }
 
-    const query = util.format("UPDATE reminders SET deleted=TRUE WHERE userId='%s' AND (action='%s' OR datetime='%s');",
+    const query = util.format("UPDATE reminders SET deleted=TRUE WHERE userId='%s' AND (LOWER(action)=LOWER('%s') OR datetime='%s');",
         userId, action, date);
-    return executeQuery(query);
+    executeQuery(query, callback);
 };
 
-module.exports.snoozeReminder = (userId, action) => {
-    const query = util.format("UPDATE reminders SET datetime=DATE_ADD(datetime, INTERVAL 5 MINUTE) WHERE userId='%s' AND action='%s';",
+module.exports.snoozeReminder = (userId, action, callback) => {
+    const query = util.format("UPDATE reminders SET datetime=DATE_ADD(datetime, INTERVAL 5 MINUTE) WHERE userId='%s' AND LOWER(action)=LOWER('%s') AND deleted=FALSE;",
         userId, action);
-    console.log(query);
-    return executeQuery(query);
+    executeQuery(query, callback);
 };
 
 // module.exports.getAllReminders = (userId) => {
@@ -76,6 +51,7 @@ module.exports.snoozeReminder = (userId, action) => {
 // };
 
 module.exports.getAllUpcomingReminders = (callback) => {
+    //TODO: change this to 1 minute
     executeQuery("SELECT * FROM reminders WHERE deleted=FALSE AND datetime BETWEEN " +
         "NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE);", callback);
 };
