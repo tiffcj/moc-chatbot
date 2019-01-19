@@ -19,31 +19,34 @@ const sessionPath = sessionClient.sessionPath(projectId, sessionId);
 
 const { FACEBOOK_ACCESS_TOKEN } = process.env;
 
-const sendTextMessage = (userId, text) => {
+const sendTextMessage = (userId, text, isAlert) => {
     console.log(text);
-    let body = {
-        messaging_type: 'RESPONSE',
-        recipient: {
-            id: userId
-        },
-        message: {
-            text
-        },
-    };
-    return fetch(
-        `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
-        {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            method: 'POST',
-            body: JSON.stringify(body),
-        }
-    );
-};
+    let msg;
+    if (isAlert) {
+        msg = {"attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "button",
+                    "text": "Reminder: " + text,
+                    "buttons": [
+                        {
+                            "type": "postback",
+                            "payload": "confirm_" + text,
+                            "title": "Confirm"
+                        },
+                        {
+                            "type": "postback",
+                            "payload": "snooze_" + text,
+                            "title": "Snooze"
+                        }
+                    ]
+                }
+            }
+        };
+    } else {
+        msg = {"text": text};
+    }
 
-const sendReminderAlert = (userId, action) => {
-    console.log(action);
     return fetch(
         `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
         {
@@ -56,9 +59,7 @@ const sendReminderAlert = (userId, action) => {
                 recipient: {
                     id: userId
                 },
-                message: {
-                    action
-                },
+                message: msg,
             }),
         }
     );
@@ -126,12 +127,8 @@ const processIntent = (name, userId, parameters) => {
     }
 };
 
-module.exports.sendMsg = (userId, msg) => {
-    sendTextMessage(userId, msg);
-};
-
 module.exports.sendAlert = (userId, msg) => {
-    sendReminderAlert(userId, msg);
+    sendTextMessage(userId, msg, true);
 };
 
 module.exports.processMessage = (event) => {
@@ -160,7 +157,7 @@ module.exports.processMessage = (event) => {
                 processIntent(result.intent.displayName, userId, result.parameters);
             }
 
-            return sendTextMessage(userId, result.fulfillmentText);
+            return sendTextMessage(userId, result.fulfillmentText, false);
         })
         .catch(err => {
             console.error('ERROR:', err);
@@ -170,7 +167,14 @@ module.exports.processMessage = (event) => {
 module.exports.processPayload = (event) => {
     const userId = event.sender.id;
     const payload = event.postback.payload;
+    const tokens = payload.split('_');
+    const type = tokens[0];
+    const action = tokens[1];
 
-    if (payload.text === 'snooze' && payload.action) {
+    if (type === 'snooze' && action) {
+        service.snoozeReminder(userId, action);
+        sendTextMessage(userId, "Reminder snoozed for 5 minutes", false);
+    } else if (type === 'confirm') {
+        sendTextMessage(userId, "Reminder confirmed", false);
     }
 };

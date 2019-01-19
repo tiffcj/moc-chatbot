@@ -62,6 +62,13 @@ module.exports.deleteReminder = (userId, action, datetime) => {
     return executeQuery(query);
 };
 
+module.exports.snoozeReminder = (userId, action) => {
+    const query = util.format("UPDATE reminders SET datetime=DATE_ADD(datetime, INTERVAL 5 MINUTE) WHERE userId='%s' AND action='%s';",
+        userId, action);
+    console.log(query);
+    return executeQuery(query);
+};
+
 // module.exports.getAllReminders = (userId) => {
 //     const query = util.format("SELECT action, datetime FROM reminders WHERE userId='%s' AND deleted=FALSE;", userId);
 //     console.log(query);

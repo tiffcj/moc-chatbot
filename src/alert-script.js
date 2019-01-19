@@ -4,7 +4,7 @@ const messenger = require('./client/messenger-interface');
 const sendAlerts = (reminders) => {
     if (reminders) {
         reminders.forEach(function (reminder) {
-            messenger.sendMsg(reminder.userId, reminder.action);
+            messenger.sendAlert(reminder.userId, reminder.action);
         });
     }
 };
