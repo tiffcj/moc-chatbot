@@ -43,18 +43,71 @@ const sendTextMessage = (userId, text) => {
     );
 };
 
+module.exports.sendAlert = (userId, action) => {
+    return fetch(
+        `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            method: 'POST',
+            body: JSON.stringify({
+                messaging_type: 'RESPONSE',
+                recipient: {
+                    id: userId
+                },
+                message: {
+                    "attachment":{
+                        "type":"template",
+                        "payload":{
+                            "template_type": "button",
+                            "text": "Reminder: " + action,
+                            "buttons":[
+                                {
+                                    "type":"postback",
+                                    "payload": {
+                                        text: "confirm",
+                                        action: action
+                                    },
+                                    "title":"Confirm"
+                                },
+                                {
+                                    "type":"postback",
+                                    "payload": "snooze",
+                                    "title":"Snooze"
+                                }
+                            ]
+                        }
+                    }
+                },
+            }),
+        }
+    );
+};
+
 const processIntent = (name, userId, parameters) => {
+    console.log(parameters);
     const action = parameters.fields.action.stringValue;
-    const datetime = parameters.fields.datetime.stringValue || parameters.fields.datetime.structValue.fields.date_time.stringValue;
+
+    // let datetime = parameters.fields.datetime.stringValue;
+    // if (datetime !== '') {
+    //     datetime = parameters.fields.datetime.structValue.fields.date_time.stringValue;
+    // }
+
     if (name === 'add-reminder') {
-        console.log(parameters.toString());
-        service.addReminder(userId, action, datetime);
+        return service.addReminder(userId, action, parameters.fields.datetime.stringValue || parameters.fields.datetime.structValue.fields.date_time.stringValue);
     } else if (name === 'delete-reminder') {
-        service.deleteReminder(userId, action, datetime);
+        return service.deleteReminder(userId, action, parameters.fields.datetime.stringValue);
+    } else if (name === 'get-reminder') {
+        return service.getAllReminders(userId);
     }
 };
 
-module.exports = (event) => {
+module.exports.sendMsg = (userId, msg) => {
+    sendTextMessage(userId, msg);
+};
+
+module.exports.process = (event) => {
     const userId = event.sender.id;
     const message = event.message.text;
 
@@ -64,8 +117,8 @@ module.exports = (event) => {
             text: {
                 text: message,
                 languageCode: languageCode,
-            },
-        },
+            }
+        }
     };
 
     sessionClient
@@ -76,12 +129,12 @@ module.exports = (event) => {
             const result = responses[0].queryResult;
             // console.log(result);
 
-            if (result.allRequiredParamsPresent) {
-                processIntent(result.intent.displayName, userId, result.parameters);
-                return sendTextMessage(userId, result.fulfillmentText);
+            if (result.allRequiredParamsPresent && result.intent.displayName !== 'about-reminders') {
+                const res = processIntent(result.intent.displayName, userId, result.parameters);
+                // console.log(res);
             }
 
-            return sendTextMessage(userId, "Please try that again.");
+            return sendTextMessage(userId, result.fulfillmentText);
         })
         .catch(err => {
             console.error('ERROR:', err);

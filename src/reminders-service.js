@@ -18,7 +18,7 @@ const con = mysql.createConnection({
 //     });
 // });
 
-const executeQuery = (query) => {
+const executeQuery = (query, callback) => {
     // con.connect(function(err) {
     //     if (err) throw err;
     //     console.log("Connected!");
@@ -29,29 +29,46 @@ const executeQuery = (query) => {
     //     });
     // });
 
-    if (!con) {
-        con.connect(function(err) {
-            if (err) throw err;
-            console.log("Connected!");
-        });
-    } else {
+    // if (!con) {
+    //     con.connect(function(err) {
+    //         if (err) throw err;
+    //         console.log("Connected!");
+    //     });
+    // } else {
         con.query(query, function (err, result) {
             if (err) throw err;
-            console.log("Result: " + result.toString());
+            console.log("Result: " + JSON.stringify(result));
+            if (callback) {
+                callback(result);
+            }
         });
-    }
+    // }
 };
 
 module.exports.addReminder = (userId, action, datetime) => {
-    const query = util.format("INSERT INTO reminders (userId, action, datetime, snoozedCount) " +
-        "VALUES (%s, '%s', '%s', %d);", userId, action, (new Date(datetime)).toISOString(), 0);
+    const query = util.format("INSERT INTO reminders (userId, action, datetime, snoozedCount, deleted) " +
+        "VALUES ('%s', '%s', '%s', 0, FALSE);", userId, action, (new Date(datetime)).toISOString());
     console.log(query);
-    executeQuery(query);
+    return executeQuery(query);
 };
 
 module.exports.deleteReminder = (userId, action, datetime) => {
-    const query = util.format("DELETE FROM reminders WHERE userId=%s AND (action='%s' OR datetime='%s'",
-        userId, action, (new Date(datetime)).toISOString());
+    let date = datetime;
+    if (datetime !== '') {
+        date = new Date(datetime).toISOString();
+    }
+
+    const query = util.format("UPDATE reminders SET deleted=TRUE WHERE userId='%s' AND (action='%s' OR datetime='%s');", userId, action, date);
     console.log(query);
-    executeQuery(query);
+    return executeQuery(query);
+};
+
+module.exports.getAllReminders = (userId) => {
+    const query = util.format("SELECT action, datetime FROM reminders WHERE userId='%s' AND deleted=FALSE;", userId);
+    console.log(query);
+    return executeQuery(query);
+};
+
+module.exports.getAllUpcomingReminders = (callback) => {
+    executeQuery("SELECT * FROM reminders WHERE deleted=FALSE AND datetime BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE);", callback);
 };
