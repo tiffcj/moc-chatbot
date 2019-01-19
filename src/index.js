@@ -20,13 +20,12 @@ app.post('/', messageWebhook);
 
 setUp();
 
-//TODO: change
 const MINUTES = 1;
 setInterval(function() {
     alertScript();
     // messenger.sendMsg(1561640790605157, "HELLO!!!");
     // messenger.sendAlert(1561640790605157, "HELLO5!");
-}, 20 * 1000);
+}, MINUTES * 60 * 1000);
 
 //TODO: get started change
 //TODO: fix intents

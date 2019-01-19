@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 const dialogflow = require('dialogflow');
 const service = require('../service/reminders');
+const moment = require('moment');
 
 const projectId = 'reminders-chatbot';
 const sessionId = '123456';
@@ -119,27 +120,45 @@ const sendTextMessage = (userId, text, isAlert) => {
         .catch((error) => console.log('Error: ', error));
 };
 
-const processIntent = (intent, userId, callback) => {
+const processIntent = (intent, userId) => {
     // console.log(parameters);
     // let datetime = parameters.fields.datetime.stringValue;
     // if (datetime !== '') {
     //     datetime = parameters.fields.datetime.structValue.fields.date_time.stringValue;
     // }
     const name = intent.intent.displayName;
-
-    if (name === 'about-reminders') {
-        return;
-    }
-
     const parameters = intent.parameters;
-    const action = parameters.fields.action.stringValue;
+
+    let callback = (reminders) => {
+        sendTextMessage(userId, intent.fulfillmentText, false)
+    };
 
     if (name === 'add-reminder') {
-        return service.addReminder(userId, action, parameters.fields.datetime.stringValue || parameters.fields.datetime.structValue.fields.date_time.stringValue, callback);
+        service.addReminder(userId, parameters.fields.action.stringValue, parameters.fields.datetime.stringValue || parameters.fields.datetime.structValue.fields.date_time.stringValue, callback);
     } else if (name === 'delete-reminder') {
-        return service.deleteReminder(userId, action, parameters.fields.datetime.stringValue, callback);
+        service.deleteReminder(userId, parameters.fields.action.stringValue, parameters.fields.datetime.stringValue, callback);
     } else if (name === 'get-reminders') {
-        //TODO
+        // console.log("GET: " + JSON.stringify(parameters));
+        let startTime, endTime;
+        if (parameters.fields.date_period.kind === 'structValue') {
+            startTime = parameters.fields.date_period.structValue.fields.startDate.stringValue;
+            endTime = parameters.fields.date_period.structValue.fields.endDate.stringValue;
+        } else if (parameters.fields.time_period.kind === 'structValue') {
+            startTime = parameters.fields.time_period.structValue.fields.startTime.stringValue;
+            endTime = parameters.fields.time_period.structValue.fields.endTime.stringValue;
+        } else if (parameters.fields.datetime.stringValue) {
+            startTime = parameters.fields.datetime.stringValue;
+        }
+
+        let callback = (reminders) => {
+            let str = 'Your reminders are:\n';
+            reminders.forEach(function (reminder) {
+                str+='- ' + reminder.action + ' on ' + moment.utc(reminder.datetime).local().format('MMMM Do YYYY [at] h:mm a') + '\n';
+            });
+            sendTextMessage(userId, str, false)
+        };
+
+        service.getAllReminders(userId, startTime, endTime, callback);
     }
 };
 
@@ -172,10 +191,8 @@ const sendToNLP = (userId, message) => {
             const result = responses[0].queryResult;
             // console.log(result);
 
-            if (result.allRequiredParamsPresent) {
-                processIntent(result, userId, (queryResult) => {
-                    sendTextMessage(userId, result.fulfillmentText, false)
-                });
+            if (result.allRequiredParamsPresent && result.intent.displayName !== 'about-reminders') {
+                processIntent(result, userId);
             } else {
                 sendTextMessage(userId, result.fulfillmentText, false);
             }

@@ -44,14 +44,20 @@ module.exports.snoozeReminder = (userId, action, callback) => {
     executeQuery(query, callback);
 };
 
-// module.exports.getAllReminders = (userId) => {
-//     const query = util.format("SELECT action, datetime FROM reminders WHERE userId='%s' AND deleted=FALSE;", userId);
-//     console.log(query);
-//     return executeQuery(query);
-// };
+module.exports.getAllRemindersByTimeRange = (userId, startTime, endTime, callback) => {
+    const query = util.format("SELECT action, datetime FROM reminders WHERE userId='%s' AND deleted=FALSE " +
+        "AND datetime BETWEEN '%s' AND '%s';", userId, (new Date(startTime)).toISOString(), (new Date(endTime)).toISOString());
+    console.log("QUERY: " + query);
+    return executeQuery(query, callback);
+};
+
+module.exports.getAllReminders = (userId, callback) => {
+    const query = util.format("SELECT action, datetime FROM reminders WHERE userId='%s' AND deleted=FALSE;", userId);
+    console.log("QUERY2: " + query);
+    return executeQuery(query, callback);
+};
 
 module.exports.getAllUpcomingReminders = (callback) => {
-    //TODO: change this to 1 minute
     executeQuery("SELECT * FROM reminders WHERE deleted=FALSE AND datetime BETWEEN " +
-        "NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE);", callback);
+        "NOW() AND DATE_ADD(NOW(), INTERVAL 1 MINUTE);", callback);
 };
