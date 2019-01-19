@@ -2,10 +2,10 @@ require('dotenv').config({ path: 'variables.env' });
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const verifyWebhook = require('./verify-webhook');
-const messageWebhook = require('./message-webhook');
-const alertReminders = require('./alert-reminders');
-const processMessage = require('./process-message');
+const verifyWebhook = require('./client/verify-webhook');
+const messageWebhook = require('./client/message-webhook');
+const alertScript = require('./alert-script');
+const messenger = require('./client/messenger-interface');
 
 const app = express();
 
@@ -18,10 +18,13 @@ app.get('/', verifyWebhook);
 
 app.post('/', messageWebhook);
 
-const minutes = 1;
+//TODO: change
+const MINUTES = 1;
 setInterval(function() {
-    console.log("I am doing my 1 minute check");
-    alertReminders();
-    // processMessage.sendAlert(1561640790605157, "HELLO2!");
-    // processMessage.sendMsg(1561640790605157, "HELLO!");
+    alertScript();
+    // messenger.sendMsg(1561640790605157, "HELLO!!!");
+    // messenger.sendAlert(1561640790605157, "HELLO5!");
 }, 10 * 1000);
+
+//TODO: get started change
+//TODO: fix intents

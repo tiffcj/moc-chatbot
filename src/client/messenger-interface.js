@@ -1,12 +1,10 @@
 const fetch = require('node-fetch');
+const dialogflow = require('dialogflow');
+const service = require('../service/reminders');
 
 const projectId = 'reminders-chatbot';
 const sessionId = '123456';
 const languageCode = 'en-US';
-
-const dialogflow = require('dialogflow');
-
-const service = require('./reminders-service');
 
 const config = {
     credentials: {
@@ -21,7 +19,30 @@ const sessionPath = sessionClient.sessionPath(projectId, sessionId);
 
 const { FACEBOOK_ACCESS_TOKEN } = process.env;
 
-const sendTextMessage = (userId, action) => {
+const sendTextMessage = (userId, text) => {
+    console.log(text);
+    let body = {
+        messaging_type: 'RESPONSE',
+        recipient: {
+            id: userId
+        },
+        message: {
+            text
+        },
+    };
+    return fetch(
+        `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            method: 'POST',
+            body: JSON.stringify(body),
+        }
+    );
+};
+
+const sendReminderAlert = (userId, action) => {
     console.log(action);
     return fetch(
         `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
@@ -43,30 +64,54 @@ const sendTextMessage = (userId, action) => {
     );
 };
 
-const sendRemindersAlert = (userId, text) => {
-    console.log(text);
-    return fetch(
-        `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
-        {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            method: 'POST',
-            body: JSON.stringify({
-                messaging_type: 'RESPONSE',
-                recipient: {
-                    id: userId
-                },
-                message: {
-                    text
-                },
-            }),
-        }
-    );
-};
+// const sendReminderAlert = (userId, action) => {
+//     console.log("here");
+//     return fetch(
+//         `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
+//         {
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             },
+//             method: 'POST',
+//             body: JSON.stringify({
+//                 messaging_type: 'RESPONSE',
+//                 recipient: {
+//                     id: userId
+//                 },
+//                 message: {
+//                     "attachment":{
+//                         "type": "template",
+//                         "payload": {
+//                             "template_type": "button",
+//                             "text": "Reminder: " + action,
+//                             "buttons":[
+//                                 {
+//                                     "type": "postback",
+//                                     "payload": {
+//                                         "text": "confirm",
+//                                         "action": action
+//                                     },
+//                                     "title": "Confirm"
+//                                 },
+//                                 {
+//                                     "type": "postback",
+//                                     "payload": {
+//                                         "text": "snooze",
+//                                         "action": action
+//                                     },
+//                                     "title": "Snooze"
+//                                 }
+//                             ]
+//                         }
+//                     }
+//                 }
+//             })
+//         }
+//     );
+// };
 
 const processIntent = (name, userId, parameters) => {
-    console.log(parameters);
+    // console.log(parameters);
     const action = parameters.fields.action.stringValue;
 
     // let datetime = parameters.fields.datetime.stringValue;
@@ -78,8 +123,6 @@ const processIntent = (name, userId, parameters) => {
         return service.addReminder(userId, action, parameters.fields.datetime.stringValue || parameters.fields.datetime.structValue.fields.date_time.stringValue);
     } else if (name === 'delete-reminder') {
         return service.deleteReminder(userId, action, parameters.fields.datetime.stringValue);
-    } else if (name === 'get-reminder') {
-        return service.getAllReminders(userId);
     }
 };
 
@@ -88,10 +131,10 @@ module.exports.sendMsg = (userId, msg) => {
 };
 
 module.exports.sendAlert = (userId, msg) => {
-    sendRemindersAlert(userId, msg);
+    sendReminderAlert(userId, msg);
 };
 
-module.exports.process = (event) => {
+module.exports.processMessage = (event) => {
     const userId = event.sender.id;
     const message = event.message.text;
 
@@ -114,8 +157,7 @@ module.exports.process = (event) => {
             // console.log(result);
 
             if (result.allRequiredParamsPresent && result.intent.displayName !== 'about-reminders') {
-                const res = processIntent(result.intent.displayName, userId, result.parameters);
-                // console.log(res);
+                processIntent(result.intent.displayName, userId, result.parameters);
             }
 
             return sendTextMessage(userId, result.fulfillmentText);
@@ -123,4 +165,12 @@ module.exports.process = (event) => {
         .catch(err => {
             console.error('ERROR:', err);
         });
+};
+
+module.exports.processPayload = (event) => {
+    const userId = event.sender.id;
+    const payload = event.postback.payload;
+
+    if (payload.text === 'snooze' && payload.action) {
+    }
 };

@@ -48,7 +48,6 @@ const executeQuery = (query, callback) => {
 module.exports.addReminder = (userId, action, datetime) => {
     const query = util.format("INSERT INTO reminders (userId, action, datetime, snoozedCount, deleted) " +
         "VALUES ('%s', '%s', '%s', 0, FALSE);", userId, action, (new Date(datetime)).toISOString());
-    console.log(query);
     return executeQuery(query);
 };
 
@@ -58,17 +57,18 @@ module.exports.deleteReminder = (userId, action, datetime) => {
         date = new Date(datetime).toISOString();
     }
 
-    const query = util.format("UPDATE reminders SET deleted=TRUE WHERE userId='%s' AND (action='%s' OR datetime='%s');", userId, action, date);
-    console.log(query);
+    const query = util.format("UPDATE reminders SET deleted=TRUE WHERE userId='%s' AND (action='%s' OR datetime='%s');",
+        userId, action, date);
     return executeQuery(query);
 };
 
-module.exports.getAllReminders = (userId) => {
-    const query = util.format("SELECT action, datetime FROM reminders WHERE userId='%s' AND deleted=FALSE;", userId);
-    console.log(query);
-    return executeQuery(query);
-};
+// module.exports.getAllReminders = (userId) => {
+//     const query = util.format("SELECT action, datetime FROM reminders WHERE userId='%s' AND deleted=FALSE;", userId);
+//     console.log(query);
+//     return executeQuery(query);
+// };
 
 module.exports.getAllUpcomingReminders = (callback) => {
-    executeQuery("SELECT * FROM reminders WHERE deleted=FALSE AND datetime BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE);", callback);
+    executeQuery("SELECT * FROM reminders WHERE deleted=FALSE AND datetime BETWEEN " +
+        "NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE);", callback);
 };
