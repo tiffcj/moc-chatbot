@@ -21,8 +21,30 @@ const sessionPath = sessionClient.sessionPath(projectId, sessionId);
 
 const { FACEBOOK_ACCESS_TOKEN } = process.env;
 
-const sendTextMessage = (userId, text) => {
-    // console.log(text);
+const sendTextMessage = (userId, action) => {
+    console.log(action);
+    return fetch(
+        `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
+        {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            method: 'POST',
+            body: JSON.stringify({
+                messaging_type: 'RESPONSE',
+                recipient: {
+                    id: userId
+                },
+                message: {
+                    action
+                },
+            }),
+        }
+    );
+};
+
+const sendRemindersAlert = (userId, text) => {
+    console.log(text);
     return fetch(
         `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
         {
@@ -37,48 +59,6 @@ const sendTextMessage = (userId, text) => {
                 },
                 message: {
                     text
-                },
-            }),
-        }
-    );
-};
-
-module.exports.sendAlert = (userId, action) => {
-    return fetch(
-        `https://graph.facebook.com/v2.6/me/messages?access_token=${FACEBOOK_ACCESS_TOKEN}`,
-        {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            method: 'POST',
-            body: JSON.stringify({
-                messaging_type: 'RESPONSE',
-                recipient: {
-                    id: userId
-                },
-                message: {
-                    "attachment":{
-                        "type":"template",
-                        "payload":{
-                            "template_type": "button",
-                            "text": "Reminder: " + action,
-                            "buttons":[
-                                {
-                                    "type":"postback",
-                                    "payload": {
-                                        text: "confirm",
-                                        action: action
-                                    },
-                                    "title":"Confirm"
-                                },
-                                {
-                                    "type":"postback",
-                                    "payload": "snooze",
-                                    "title":"Snooze"
-                                }
-                            ]
-                        }
-                    }
                 },
             }),
         }
@@ -105,6 +85,10 @@ const processIntent = (name, userId, parameters) => {
 
 module.exports.sendMsg = (userId, msg) => {
     sendTextMessage(userId, msg);
+};
+
+module.exports.sendAlert = (userId, msg) => {
+    sendRemindersAlert(userId, msg);
 };
 
 module.exports.process = (event) => {

@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const verifyWebhook = require('./verify-webhook');
 const messageWebhook = require('./message-webhook');
 const alertReminders = require('./alert-reminders');
+const processMessage = require('./process-message');
 
 const app = express();
 
@@ -19,7 +20,8 @@ app.post('/', messageWebhook);
 
 const minutes = 1;
 setInterval(function() {
-    // console.log("I Iam doing my 1 minute check");
+    console.log("I am doing my 1 minute check");
     alertReminders();
+    // processMessage.sendAlert(1561640790605157, "HELLO2!");
     // processMessage.sendMsg(1561640790605157, "HELLO!");
 }, 10 * 1000);

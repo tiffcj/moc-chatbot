@@ -1,10 +1,10 @@
 const processMessage = require('./process-message');
 
-const processPayload = (payload) => {
-    if (payload.text === 'snooze' && payload.action) {
-
-    }
-};
+// const processPayload = (payload) => {
+//     if (payload.text === 'snooze' && payload.action) {
+//
+//     }
+// };
 
 module.exports = (req, res) => {
     if (req.body.object === 'page') {
@@ -14,10 +14,10 @@ module.exports = (req, res) => {
                 if (event.message && event.message.text) {
                     processMessage.process(event);
                 }
-                if (event.postback && event.postback.payload) {
-                    const payload = JSON.parse(event.postback.payload);
-                    processPayload(payload);
-                }
+                // if (event.postback && event.postback.payload) {
+                //     const payload = JSON.parse(event.postback.payload);
+                //     processPayload(payload);
+                // }
             });
         });
 
