@@ -176,8 +176,11 @@ module.exports.processMessage = (event) => {
 
 const sendToNLP = (userId, message) => {
 
-    console.log(JSON.stringify(config));
+    // console.log(JSON.stringify(config));
 
+    console.log(process.env.DIALOGFLOW_PRIVATE_KEY);
+    console.log(_.replace(process.env.DIALOGFLOW_PRIVATE_KEY, new RegExp('\\\\n', '\g'), '\n'));
+    
     const request = {
         session: sessionPath,
         queryInput: {
