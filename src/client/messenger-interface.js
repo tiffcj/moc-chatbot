@@ -21,6 +21,7 @@ const sessionPath = sessionClient.sessionPath(projectId, sessionId);
 
 const { FACEBOOK_ACCESS_TOKEN } = process.env;
 
+// Sets up get started button
 module.exports.getStarted = () => {
     return fetch(`https://graph.facebook.com/v2.6/me/messenger_profile?access_token=${FACEBOOK_ACCESS_TOKEN}`,
         {
@@ -39,6 +40,7 @@ module.exports.getStarted = () => {
     );
 };
 
+// Sets up persistent menu
 module.exports.persistentMenu = () => {
     return fetch(`https://graph.facebook.com/v2.6/me/messenger_profile?access_token=${FACEBOOK_ACCESS_TOKEN}`,
         {
@@ -72,10 +74,8 @@ module.exports.persistentMenu = () => {
     );
 };
 
+// Sends message or reminders alert to user
 const sendTextMessage = (userId, text, isAlert) => {
-    // console.log(text);
-    // console.log(userId);
-    // console.log(isAlert);
     let msg;
     if (isAlert) {
         msg = {"attachment": {
@@ -121,12 +121,8 @@ const sendTextMessage = (userId, text, isAlert) => {
         .catch((error) => console.log('Error: ', error));
 };
 
+// Processes intent information received from NLP
 const processIntent = (intent, userId) => {
-    // console.log(parameters);
-    // let datetime = parameters.fields.datetime.stringValue;
-    // if (datetime !== '') {
-    //     datetime = parameters.fields.datetime.structValue.fields.date_time.stringValue;
-    // }
     const name = intent.intent.displayName;
     const parameters = intent.parameters;
 
@@ -135,11 +131,11 @@ const processIntent = (intent, userId) => {
     };
 
     if (name === 'add-reminder') {
-        service.addReminder(userId, parameters.fields.action.stringValue, parameters.fields.datetime.stringValue || parameters.fields.datetime.structValue.fields.date_time.stringValue, callback);
+        service.addReminder(userId, parameters.fields.action.stringValue, parameters.fields.datetime.stringValue ||
+            parameters.fields.datetime.structValue.fields.date_time.stringValue, callback);
     } else if (name === 'delete-reminder') {
         service.deleteReminder(userId, parameters.fields.action.stringValue, parameters.fields.datetime.stringValue, callback);
     } else if (name === 'get-reminders') {
-        // console.log("GET: " + JSON.stringify(parameters));
         let startTime, endTime;
         if (parameters.fields.date_period.kind === 'structValue') {
             startTime = parameters.fields.date_period.structValue.fields.startDate.stringValue;
@@ -152,10 +148,16 @@ const processIntent = (intent, userId) => {
         }
 
         let callback = (reminders) => {
-            let str = 'Your reminders are:\n';
-            reminders.forEach(function (reminder) {
-                str+='- ' + reminder.action + ' on ' + moment.utc(reminder.datetime).local().format('MMMM Do YYYY [at] h:mm a') + '\n';
-            });
+            let str = '';
+            if (reminders.length === 0) {
+                str += 'You have no reminders for that time period';
+            } else {
+                str += 'Your reminders are:\n';
+                reminders.forEach(function (reminder) {
+                    str += '- ' + reminder.action + ' on ' +
+                        moment.utc(reminder.datetime).local().format('MMMM Do YYYY [at] h:mm a') + '\n';
+                });
+            }
             sendTextMessage(userId, str, false)
         };
 
@@ -163,10 +165,12 @@ const processIntent = (intent, userId) => {
     }
 };
 
+// Send reminder alert to user
 module.exports.sendAlert = (userId, msg) => {
     sendTextMessage(userId, msg, true);
 };
 
+// Processes a messenger event using its message
 module.exports.processMessage = (event) => {
     const userId = event.sender.id;
     const message = event.message.text;
@@ -174,15 +178,29 @@ module.exports.processMessage = (event) => {
     sendToNLP(userId, message);
 };
 
+// Processes a messenger event using its payload
+module.exports.processPayload = (event) => {
+    const userId = event.sender.id;
+    const payload = event.postback.payload;
+    const tokens = payload.split('_');
+    const type = tokens[0];
+    const action = tokens[1];
+
+    if (type === 'snooze' && action) {
+        //TODO: snooze from both text & button
+        service.snoozeReminder(userId, action, (queryResult) => {
+            sendTextMessage(userId, "Reminder snoozed for 5 minutes", false)
+        });
+    } else if (type === 'confirm') {
+        //TODO: set a confirm flag and add to queries
+        sendTextMessage(userId, "Reminder confirmed", false);
+    } else if (type === 'add-reminder' || type === 'get-started' || type === 'get-reminders') {
+        sendToNLP(userId, event.postback.title);
+    }
+};
+
+// Sends message received from messenger to NLP
 const sendToNLP = (userId, message) => {
-
-    // console.log(JSON.stringify(config));
-
-    // console.log("env: " + process.env.DIALOGFLOW_PRIVATE_KEY);
-    // console.log("replaced: " + _.replace(process.env.DIALOGFLOW_PRIVATE_KEY, new RegExp('\\\\n', '\g'), '\n'));
-    // console.log(config);
-    // console.log("Key: " + config.credentials.private_key);
-
     const request = {
         session: sessionPath,
         queryInput: {
@@ -195,10 +213,7 @@ const sendToNLP = (userId, message) => {
 
     sessionClient.detectIntent(request)
         .then(responses => {
-            // console.log(responses);
-            // console.log("-----");
             const result = responses[0].queryResult;
-            // console.log(result);
 
             if (result.allRequiredParamsPresent && result.intent.displayName !== 'about-reminders') {
                 processIntent(result, userId);
@@ -207,28 +222,4 @@ const sendToNLP = (userId, message) => {
             }
         })
         .catch(err => console.error('Error:', err));
-};
-
-module.exports.processPayload = (event) => {
-    const userId = event.sender.id;
-    const payload = event.postback.payload;
-    const tokens = payload.split('_');
-    const type = tokens[0];
-    const action = tokens[1];
-
-    // console.log("here");
-    // console.log(tokens);
-
-    if (type === 'snooze' && action) {
-        //TODO: snooze from both text & button
-        service.snoozeReminder(userId, action, (queryResult) => {
-            sendTextMessage(userId, "Reminder snoozed for 5 minutes", false)
-        });
-    } else if (type === 'confirm') {
-        //TODO: set confirm flag, add to queries
-        sendTextMessage(userId, "Reminder confirmed", false);
-    } else if (type === 'add-reminder' || type === 'get-started' || type === 'get-reminders') {
-        // console.log("here2");
-        sendToNLP(userId, event.postback.title);
-    }
 };

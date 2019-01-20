@@ -5,8 +5,9 @@ const bodyParser = require('body-parser');
 const verifyWebhook = require('./client/verify-webhook');
 const messageWebhook = require('./client/message-webhook');
 const alertScript = require('./alert-script');
-const setUp = require('./client/messenger-setup');
+const messengerSetup = require('./client/messenger-setup');
 
+// Setting up webhook
 const app = express();
 
 app.use(bodyParser.json());
@@ -19,11 +20,11 @@ app.get('/', verifyWebhook);
 
 app.post('/', messageWebhook);
 
-setUp();
+// Setting up messenger get started button and menu
+messengerSetup();
 
+// Setting up alert reminders script
 const MINUTES = 1;
 setInterval(function() {
     alertScript();
-    // messenger.sendMsg(1561640790605157, "HELLO!!!");
-    // messenger.sendAlert(1561640790605157, "HELLO5!");
 }, MINUTES * 60 * 1000);

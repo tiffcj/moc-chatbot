@@ -22,11 +22,8 @@ const executeQuery = (query, callback) => {
 };
 
 module.exports.addReminder = (userId, action, datetime, callback) => {
-    // console.log("in database: " + toUTCDate(datetime));
-
-    const query = util.format("INSERT INTO reminders (userId, action, datetime, snoozedCount, deleted) " +
-        "VALUES ('%s', '%s', '%s', 0, FALSE);", userId, action, toUTCDate(datetime));
-    console.log("QUERY: " + query);
+    const query = util.format("INSERT INTO reminders (userId, action, datetime, deleted) " +
+        "VALUES ('%s', '%s', '%s', FALSE);", userId, action, toUTCDate(datetime));
     executeQuery(query, callback);
 };
 
@@ -50,13 +47,11 @@ module.exports.snoozeReminder = (userId, action, callback) => {
 module.exports.getAllRemindersByTimeRange = (userId, startTime, endTime, callback) => {
     const query = util.format("SELECT action, datetime FROM reminders WHERE userId='%s' AND deleted=FALSE " +
         "AND datetime BETWEEN '%s' AND '%s';", userId, toUTCDate(startTime), toUTCDate(endTime));
-    console.log("QUERY: " + query);
     return executeQuery(query, callback);
 };
 
 module.exports.getAllReminders = (userId, callback) => {
     const query = util.format("SELECT action, datetime FROM reminders WHERE userId='%s' AND deleted=FALSE;", userId);
-    console.log("QUERY2: " + query);
     return executeQuery(query, callback);
 };
 
