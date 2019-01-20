@@ -24,11 +24,8 @@ module.exports.getAllReminders = (userId, startTime, endTime, callback) => {
         db.getAllReminders(userId, callback);
     } else {
         if (!end) {
-            console.log(startTime);
-            start = moment(startTime.toString()).startOf('day').format();
-            end = moment(startTime.toString()).endOf('day').format();
-            console.log(start);
-            console.log(end);
+            start = moment(startTime).startOf('day').format();
+            end = moment(startTime).endOf('day').format();
         }
         db.getAllRemindersByTimeRange(userId, start, end, callback);
     }
