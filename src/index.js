@@ -26,6 +26,3 @@ setInterval(function() {
     // messenger.sendMsg(1561640790605157, "HELLO!!!");
     // messenger.sendAlert(1561640790605157, "HELLO5!");
 }, MINUTES * 60 * 1000);
-
-//TODO: get started change
-//TODO: fix intents
