@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const dialogflow = require('dialogflow');
 const service = require('../service/reminders');
 const moment = require('moment');
+const _ = require('lodash');
 
 const projectId = 'reminders-chatbot';
 const sessionId = '123456';
@@ -9,7 +10,7 @@ const languageCode = 'en-US';
 
 const config = {
     credentials: {
-        private_key: process.env.DIALOGFLOW_PRIVATE_KEY,
+        private_key: _.replace(process.env.DIALOGFLOW_PRIVATE_KEY, new RegExp("\\\\n", "\g"), "\n"),
         client_email: process.env.DIALOGFLOW_CLIENT_EMAIL
     }
 };
