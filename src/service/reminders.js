@@ -1,4 +1,5 @@
 const db = require('../db/reminders-db.js');
+const moment = require('moment');
 
 module.exports.addReminder = (userId, action, datetime, callback) => {
     db.addReminder(userId, action, datetime, callback);
@@ -23,9 +24,10 @@ module.exports.getAllReminders = (userId, startTime, endTime, callback) => {
         db.getAllReminders(userId, callback);
     } else {
         if (!end) {
-            start = (new Date(startTime)).setHours(0, 0, 0, 0);
-            end = (new Date(startTime)).setHours(23, 59, 59, 999);
+            start = moment(startTime).startOf('day');
+            end = moment(startTime).endOf('day');
         }
         db.getAllRemindersByTimeRange(userId, start, end, callback);
     }
 };
+//2019-01-19T12:00:00-06:00
