@@ -10,7 +10,7 @@ const languageCode = 'en-US';
 
 const config = {
     credentials: {
-        private_key: _.replace(process.env.DIALOGFLOW_PRIVATE_KEY, new RegExp("\\\\n", "\g"), "\n"),
+        private_key: process.env.DIALOGFLOW_PRIVATE_KEY,
         client_email: process.env.DIALOGFLOW_CLIENT_EMAIL
     }
 };
@@ -178,9 +178,9 @@ const sendToNLP = (userId, message) => {
 
     // console.log(JSON.stringify(config));
 
-    console.log(process.env.DIALOGFLOW_PRIVATE_KEY);
-    console.log(_.replace(process.env.DIALOGFLOW_PRIVATE_KEY, new RegExp('\\\\n', '\g'), '\n'));
-    
+    console.log("env: " + process.env.DIALOGFLOW_PRIVATE_KEY);
+    console.log("replaced: " + _.replace(process.env.DIALOGFLOW_PRIVATE_KEY, new RegExp('\\\\n', '\g'), '\n'));
+
     const request = {
         session: sessionPath,
         queryInput: {
