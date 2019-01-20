@@ -180,6 +180,8 @@ const sendToNLP = (userId, message) => {
 
     console.log("env: " + process.env.DIALOGFLOW_PRIVATE_KEY);
     console.log("replaced: " + _.replace(process.env.DIALOGFLOW_PRIVATE_KEY, new RegExp('\\\\n', '\g'), '\n'));
+    console.log(config);
+    console.log("Key: " + config.credentials.private_key);
 
     const request = {
         session: sessionPath,
