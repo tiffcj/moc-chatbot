@@ -47,6 +47,7 @@ module.exports.snoozeReminder = (userId, action, callback) => {
 module.exports.getAllRemindersByTimeRange = (userId, startTime, endTime, callback) => {
     const query = util.format("SELECT action, datetime FROM reminders WHERE userId='%s' AND deleted=FALSE " +
         "AND datetime BETWEEN '%s' AND '%s';", userId, toUTCDate(startTime), toUTCDate(endTime));
+    console.log(query);
     return executeQuery(query, callback);
 };
 
