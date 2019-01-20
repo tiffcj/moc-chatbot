@@ -5,7 +5,8 @@ const con = mysql.createConnection({
     host: "moc-chatbot.cqhgzhav2kxu.us-west-2.rds.amazonaws.com",
     user: "tiffcj",
     password: "moc-chatbot123!",
-    database: "default"
+    database: "default",
+    dateStrings : true
 });
 
 const executeQuery = (query, callback) => {
@@ -21,6 +22,8 @@ const executeQuery = (query, callback) => {
 };
 
 module.exports.addReminder = (userId, action, datetime, callback) => {
+    // console.log("in database: " + toUTCDate(datetime));
+
     const query = util.format("INSERT INTO reminders (userId, action, datetime, snoozedCount, deleted) " +
         "VALUES ('%s', '%s', '%s', 0, FALSE);", userId, action, toUTCDate(datetime));
     console.log("QUERY: " + query);

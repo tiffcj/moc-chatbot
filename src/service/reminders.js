@@ -1,6 +1,7 @@
 const db = require('../db/reminders-db.js');
 
 module.exports.addReminder = (userId, action, datetime, callback) => {
+    // console.log("In service: " + datetime);
     db.addReminder(userId, action, datetime, callback);
 };
 
