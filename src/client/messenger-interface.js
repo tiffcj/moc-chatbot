@@ -174,6 +174,9 @@ module.exports.processMessage = (event) => {
 };
 
 const sendToNLP = (userId, message) => {
+
+    console.log(JSON.stringify(config));
+
     const request = {
         session: sessionPath,
         queryInput: {
