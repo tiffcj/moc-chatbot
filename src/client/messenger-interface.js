@@ -187,12 +187,12 @@ module.exports.processPayload = (event) => {
     const action = tokens[1];
 
     if (type === 'snooze' && action) {
-        //TODO: snooze from both text & button
+        //TODO: implement snooze from text as well
         service.snoozeReminder(userId, action, (queryResult) => {
             sendTextMessage(userId, "Reminder snoozed for 5 minutes", false)
         });
     } else if (type === 'confirm') {
-        //TODO: set a confirm flag and add to queries
+        //TODO: set a confirm flag in db and add to queries
         sendTextMessage(userId, "Reminder confirmed", false);
     } else if (type === 'add-reminder' || type === 'get-started' || type === 'get-reminders') {
         sendToNLP(userId, event.postback.title);
@@ -215,7 +215,7 @@ const sendToNLP = (userId, message) => {
         .then(responses => {
             const result = responses[0].queryResult;
 
-            if (result.allRequiredParamsPresent && result.intent.displayName !== 'about-reminders') {
+            if (result.allRequiredParamsPresent && result.intent.displayName.includes('reminder')) {
                 processIntent(result, userId);
             } else {
                 sendTextMessage(userId, result.fulfillmentText, false);
