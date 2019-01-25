@@ -214,9 +214,8 @@ const sendToNLP = (userId, message) => {
     sessionClient.detectIntent(request)
         .then(responses => {
             const result = responses[0].queryResult;
-            console.log(result);
 
-            if (result.allRequiredParamsPresent && result.intent.displayName.includes('reminder')) {
+            if (result.allRequiredParamsPresent && result.intent && result.intent.displayName.includes('reminder')) {
                 processIntent(result, userId);
             } else {
                 sendTextMessage(userId, result.fulfillmentText, false);
