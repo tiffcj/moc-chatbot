@@ -153,9 +153,10 @@ const processIntent = (intent, userId) => {
                 str += 'You have no reminders for that time period';
             } else {
                 str += 'Your reminders are:\n';
+                let timeDiff = (new Date()).getTimezoneOffset();
                 reminders.forEach(function (reminder) {
                     str += '- ' + reminder.action + ' on ' +
-                        moment.utc(reminder.datetime).local().format('MMMM Do YYYY [at] h:mm a') + '\n';
+                        moment.utc(reminder.datetime).local().subtract(timeDiff, 'm').format('MMMM Do YYYY [at] h:mm a') + '\n';
                 });
             }
             sendTextMessage(userId, str, false)
