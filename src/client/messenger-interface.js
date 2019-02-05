@@ -155,7 +155,7 @@ const processIntent = (intent, userId) => {
                 str += 'Your reminders are:\n';
                 reminders.forEach(function (reminder) {
                     str += '- ' + reminder.action + ' on ' +
-                        moment.utc(reminder.datetime).local().subtract(6, 'hours').format('MMMM Do YYYY [at] h:mm a') + '\n';
+                        moment.utc(reminder.datetime).local().format('MMMM Do YYYY [at] h:mm a') + '\n';
                 });
             }
             sendTextMessage(userId, str, false)
